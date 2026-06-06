@@ -1,0 +1,73 @@
+Crea una aplicación React + Supabase funcional para despliegue en la nube (PoC).
+
+## Stack
+- React 19 + TypeScript + Vite
+- Supabase (auth + PostgreSQL + RLS)
+- react-router-dom v7 (rutas protegidas)
+- recharts (dashboard visual)
+- CSS moderno (dark theme, responsive)
+
+## Funcionalidad requerida
+
+### 1. Auth (completo)
+- Registro e inicio de sesión con email/password
+- Rutas protegidas (redirige a /login si no hay sesión)
+- Perfil de usuario creado automáticamente al registrarse (trigger en DB)
+- Cerrar sesión desde el navbar
+
+### 2. Tablas en Supabase (SQL)
+- `profiles`: id (FK a auth.users), display_name, created_at, updated_at
+- `quality_rules`: id, user_id, name, description, rule_type (enum: NOT_NULL, UNIQUE, RANGE, VALUE_IN_SET, REGEX_MATCH, STRING_LENGTH, CUSTOM_QUERY), severity (enum: critical, high, medium, low), table_name, column_name, params (JSONB), is_active, created_at, updated_at
+- `rule_checks`: id, rule_id (FK cascade), user_id, status (enum: running, passed, failed, error), rows_checked, rows_failed, error_message, details (JSONB), started_at, finished_at
+- Row Level Security: cada usuario solo ve/edita sus propios datos
+- Trigger: al crear un auth.user, insertar su profile automáticamente
+
+### 3. Páginas
+
+**Dashboard (/)**
+- 4 tarjetas de resumen: Total Rules, Active Rules, Total Checks, Pass Rate (%)
+- Gráfico de pastel: Rules by Severity (colores: red, orange, yellow, green)
+- Gráfico de barras: Passed/Failed Checks últimos 7 días
+- Tabla "Recent Runs": status, rows_checked, rows_failed, started_at
+
+**Rules (/rules)**
+- Lista de tarjetas con filtros: All / Active / Inactive
+- Cada tarjeta muestra: nombre, severity (badge de color), tipo de regla, tabla/columna, estado active/inactive, descripción
+- Botón "Run Check" que ejecuta la validación contra Supabase y guarda el resultado
+
+**New Rule (/rules/new)**
+- Formulario con campos dinámicos según el tipo de regla:
+  - NOT_NULL: requiere tabla + columna
+  - UNIQUE: requiere tabla + columna
+  - RANGE: requiere tabla + columna + min/max (number)
+  - VALUE_IN_SET: requiere tabla + columna + valores permitidos (csv)
+  - REGEX_MATCH: requiere tabla + columna + patrón regex
+  - STRING_LENGTH: requiere tabla + columna + min/max (number)
+  - CUSTOM_QUERY: requiere SQL personalizado (para PoC, ejecutar como RPC restringido)
+- Selector de severidad
+- Validación de campos requeridos
+
+### 4. Ejecución de checks (Run Check)
+- Al hacer clic en "Run Check":
+  1. Insertar fila en rule_checks con status "running"
+  2. Consultar datos de la tabla configurada en Supabase
+  3. Evaluar cada fila contra la regla (en el cliente para PoC)
+  4. Actualizar rule_checks con: status (passed/failed/error), rows_checked, rows_failed, details (array de fallos)
+- Mostrar resultados visuales (badge de color en la lista de runs)
+
+### 5. Despliegue (nube)
+- Soporte para variables de entorno: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
+- Archivo .env.example documentado
+- Script de build: tsc -b && vite build
+- README con instrucciones de:
+  1. Crear proyecto Supabase
+  2. Ejecutar schema.sql en SQL Editor
+  3. Configurar Authentication (disable confirm email para PoC)
+  4. Copiar .env.example → .env y llenar credenciales
+  5. npm install && npm run dev
+
+### No incluir
+- Tests (PoC)
+- Docker (opcional, no prioritario)
+- Paginación (limit 20-50 para PoC)
+- Modo oscuro toggle (fijo dark theme)
