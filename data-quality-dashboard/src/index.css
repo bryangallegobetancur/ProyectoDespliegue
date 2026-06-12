@@ -304,6 +304,26 @@ a:hover {
   font-size: 0.85rem;
 }
 
+.form-success {
+  color: var(--success);
+  font-size: 0.9rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.auth-link {
+  display: block;
+  text-align: center;
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.auth-link:hover {
+  text-decoration: underline;
+}
+
 .loading-screen {
   display: flex;
   align-items: center;
